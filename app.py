@@ -12,23 +12,25 @@ import getpass
 import os
 import shutil
 import win32gui, win32con
+import sys
 
 hiding = True
 hwnd = win32gui.GetForegroundWindow()
 win32gui.ShowWindow(hwnd , win32con.SW_HIDE)
 USER_NAME = getpass.getuser()
 
-
-def add_to_startup(file_path=""):
+def _add_to_startup(file_path=""):
     if file_path == "":
         file_path = os.path.dirname(os.path.realpath(__file__))
     bat_path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
     with open(bat_path + '\\' + "AutoClicker.bat", "w") as bat_file:
-        bat_file.write(r'start "" "%s"' % file_path)
+        bat_file.write(r'python "%s"' % file_path)
 
-def add_to_programs():
+def _add_to_programs():
     bat_path = r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs" % USER_NAME
     target = bat_path + '\\' + "AutoClicker.lnk"
+    if os.path.exists(target):
+        os.remove(target)
     out = "AutoClicker.lnk"
     shell = wincl.Dispatch('WScript.Shell', USER_NAME)
     shortcut = shell.CreateShortcut(out)
@@ -36,14 +38,35 @@ def add_to_programs():
     shortcut.Arguments = f'"{os.path.realpath(__file__)}"'
     shortcut.IconLocation = os.path.dirname(os.path.realpath(__file__)) + '\\icon.ico'
     shortcut.Save()
-    shutil.move(out, r'C:\Users\%s\92ef8gh9dij3u94f2g.lnk' % USER_NAME)
-    os.system(f"move \"C:\\Users\\%s\\92ef8gh9dij3u94f2g.lnk\" \"{target}\"" % USER_NAME)
+    shutil.move(out, r'C:\Users\%s\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934foje.lnk' % USER_NAME)
+    os.system(f"move \"C:\\Users\\%s\\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934foje.lnk\" \"{target}\"" % USER_NAME)
     return target
 
-if not os.path.exists(r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\AutoClicker.lnk" % USER_NAME):
-    target = add_to_programs()
-    print(target)
-    add_to_startup(target)
+def add_to_startup():
+    if not os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk"):
+        _add_to_startup()
+
+def remove_from_startup():
+    if os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk"):
+        os.remove((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk")
+
+def install():
+    _add_to_programs()
+
+def remove():
+    remove_from_startup()
+    if os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk"):
+        os.remove((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk")
+
+for i in sys.argv[1:]:
+    if i == '-addstartup':
+        add_to_startup()
+    if i == '-rmstartup':
+        remove_from_startup()
+    if i == '-install':
+        install()
+    if i == '-remove':
+        install()
 
 user32 = ctypes.windll.user32
 import win32api, win32con
