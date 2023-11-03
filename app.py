@@ -79,16 +79,14 @@ def main():
     print("Press Shift+F11 to hide or show the window")
     print("Press Shift+F12 to stop or start AutoClicker")
 
-    def lclick(down=True):
-        x, y = win32api.GetCursorPos()
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
-
-
-    def rclick():
-        x, y = win32api.GetCursorPos()
-        win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, x, y, 0, 0)
-        win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, x, y, 0, 0)
+    #def lclick(down=True):
+    #    x, y = win32api.GetCursorPos()
+    #    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, x, y, 0, 0)
+    #    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, x, y, 0, 0)
+    #def rclick():
+    #    x, y = win32api.GetCursorPos()
+    #    win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTDOWN, x, y, 0, 0)
+    #    win32api.mouse_event(win32con.MOUSEEVENTF_RIGHTUP, x, y, 0, 0)
 
     def t():
         wm = {
