@@ -26,4 +26,4 @@ python app.py -h
 ```
 
 ## Known Issues
-- While program running alt-gr combinations doesn't work properly.
+- While program running, alt-gr combinations doesn't work properly.

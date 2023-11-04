@@ -16,19 +16,50 @@ import win32gui
 import sys
 import signal
 import msvcrt
+import subprocess
+from ctypes import windll
+
+if getattr(sys, 'frozen', True):
+    application_dir = os.path.dirname(sys.executable)
+elif __file__:
+    application_dir = os.path.dirname(__file__)
+
+if getattr(sys, 'frozen', True):
+    application_path = sys.executable
+elif __file__:
+    application_path = __file__
 
 hwnd = win32gui.GetForegroundWindow()
 USER_NAME = getpass.getuser()
 
-def quit():
-    os.remove(os.path.join(os.path.dirname(__file__), '.lock'))
+exit = sys.exit
+
+def cmd(command):
+    return subprocess.Popen(command, shell=True, stdin=subprocess.PIPE, stderr=subprocess.STDOUT, stdout=subprocess.PIPE, close_fds=True)
+
+def quit(e=True):
+    if os.path.exists(os.path.join(application_dir, '.lock')):
+        os.remove(os.path.join(application_dir, '.lock'))
+    if e:
+        exit()
 
 def _add_to_startup(file_path=""):
     if file_path == "":
-        file_path = os.path.dirname(os.path.realpath(__file__))
-    bat_path = r'C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup' % USER_NAME
-    with open(bat_path + '\\' + "AutoClicker.bat", "w") as bat_file:
-        bat_file.write(r'python "%s"' % file_path)
+        file_path = application_path
+    bat_path = r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME
+    target = bat_path + '\\' + "AutoClicker.lnk"
+    if os.path.exists(target):
+        os.remove(target)
+    out = "AutoClicker.lnk"
+    shell = wincl.Dispatch('WScript.Shell', USER_NAME)
+    shortcut = shell.CreateShortcut(out)
+    shortcut.Targetpath = f'"{application_path}"'
+    shortcut.Arguments = '--run'
+    #shortcut.IconLocation = os.path.dirname(os.path.realpath(__file__)) + '\\icon.ico'
+    shortcut.Save()
+    #shutil.move(out, r'C:\Users\%s\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934fo.lnk' % USER_NAME)
+    cmd(f"move \"{out}\" \"{target}\"")
+    return target
 
 def _add_to_programs():
     bat_path = r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs" % USER_NAME
@@ -38,12 +69,12 @@ def _add_to_programs():
     out = "AutoClicker.lnk"
     shell = wincl.Dispatch('WScript.Shell', USER_NAME)
     shortcut = shell.CreateShortcut(out)
-    shortcut.Targetpath = r'C:\Users\omerf\AppData\Local\Microsoft\WindowsApps\python.exe'
-    shortcut.Arguments = f'"{os.path.realpath(__file__)}"'
-    shortcut.IconLocation = os.path.dirname(os.path.realpath(__file__)) + '\\icon.ico'
+    shortcut.Targetpath = f'"{application_path}"'
+    shortcut.Arguments = '--run'
+    #shortcut.IconLocation = os.path.dirname(os.path.realpath(__file__)) + '\\icon.ico'
     shortcut.Save()
-    shutil.move(out, r'C:\Users\%s\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934foje.lnk' % USER_NAME)
-    os.system(f"move \"C:\\Users\\%s\\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934foje.lnk\" \"{target}\"" % USER_NAME)
+    #shutil.move(out, r'C:\Users\%s\d4h238qfuehygwor34q987twhvumvru3gyferughf33785erugh934foje.lnk' % USER_NAME)
+    cmd(f"move \"{out}\" \"{target}\"")
     return target
 
 def add_to_startup():
@@ -59,12 +90,26 @@ def install():
 
 def uninstall():
     remove_from_startup()
-    if os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk"):
-        os.remove((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk")
+    if os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs" % USER_NAME) + '\\' + "AutoClicker.lnk"):
+        os.remove((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs" % USER_NAME) + '\\' + "AutoClicker.lnk")
 
 def reinstall():
+    startup = os.path.exists((r"C:\Users\%s\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup" % USER_NAME) + '\\' + "AutoClicker.lnk")
     uninstall()
     install()
+    if startup:
+        add_to_startup()
+
+def set_cps(cps):
+    with open(os.path.join(application_dir, '.conf'), 'w') as f:
+        f.write(str(cps))
+
+def get_cps():
+    if not os.path.exists(os.path.join(application_dir, '.conf')):
+        set_cps(default_cps)
+        return default_cps
+    with open(os.path.join(application_dir, '.conf'), 'r') as f:
+        return int(f.read())
 
 hiding = False
 running = False
@@ -146,12 +191,7 @@ def main():
             cpyHook.cUnhook(HookConstants.WH_MOUSE_LL)
             cpyHook.cUnhook(HookConstants.WH_KEYBOARD)
 
-    if not os.path.exists(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf')):
-        with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-            f.write(str(default_cps))
-
-    with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'r') as f:
-        target_cps = int(f.read())
+    target_cps = get_cps()
 
     thethread = threading.Thread(target=t, daemon=True)
     thethread.start()
@@ -195,9 +235,15 @@ def main():
 
 if os.path.exists(os.path.join(os.path.dirname(__file__), '.lock')):
     print("Another instance is already running. Please kill the running process continue by pressing 'k' or press any key to close this window.")
-    if msvcrt.getch().lower() == 'k':
+    x = msvcrt.getch().lower()
+    if x == b'k':
         with open(os.path.join(os.path.dirname(__file__), '.lock'), 'rb') as lockfile:
-            os.kill(int.from_bytes(lockfile.read(), byteorder='big'), signal.SIGTERM)
+            try:
+                os.kill(int.from_bytes(lockfile.read(), byteorder='big'), signal.SIGTERM)
+            except Exception as e:
+                print("An unexpected exception occured, please report it! (And run again))")
+                print(e)
+                quit()
         os.remove(os.path.join(os.path.dirname(__file__), '.lock'))
     else:
         exit()
@@ -207,58 +253,48 @@ try:
         lockfile.write(os.getpid().to_bytes(3, byteorder='big'))
 
     helptext = f"""AutoClicker by Ömer Faruk Nehir (https://github.com/OFN01)
-    [ --help       , -h ]: Show this message and exit.
-    [ --addstartup , -S ]: Add program to startup as user.
-    [ --rmstartup  , -s ]: Remove program from startup.
-    [ --install    , -i ]: Install this program as user (Still needs this python file and contents).
-    [ --uninstall  , -u ]: Uninstall this program from system and remove from startup.
-    [ --reinstall  , -R ]: Uninstall and installs this program to fix errors.
-    [ --resetcps   , -C ]: Resets cps (clicks per second) number to default ({default_cps}).
-    [ --cps        , -c ]: Writes or sets (with -c={{cps}} or --cps={{cps}}) cps of AutoClicker.
-    [ --run        , -r ]: Run the AutoClicker."""
+    [ --help        -h ]:  Show this message and exit.
+    [ --addstartup  -s ]:  Add program to startup as user.
+    [ --rmstartup   -S ]:  Remove program from startup.
+    [ --install     -i ]:  Install this program as user (Still needs this python file and contents).
+    [ --uninstall   -u ]:  Uninstall this program from system and remove from startup.
+    [ --reinstall   -R ]:  Uninstall and installs this program to fix errors.
+    [ --resetcps    -C ]:  Resets cps (clicks per second) number to default ({default_cps}).
+    [ --cps         -c ]:  Writes or sets (with -c={{cps}} or --cps={{cps}}) cps of AutoClicker.
+    [ --run         -r ]:  Run the AutoClicker."""
 
     for arg in sys.argv[1:]:
         if arg in ['--help', '-h', '/h', '/help']:
             print(helptext)
-        elif arg in ['--addstartup', '-S']:
+        elif arg in ['--addstartup', '-s']:
             add_to_startup()
-        elif arg in ['--rmstartup', '-s']:
+            print('Added to startup successfully')
+        elif arg in ['--rmstartup', '-S']:
             remove_from_startup()
+            print('Removed from startup')
         elif arg in ['--install', '-i']:
             install()
+            print('Installed successfully')
         elif arg in ['--uninstall', '-u']:
             uninstall()
+            print('Uninstalled successfully')
         elif arg in ['--reinstall', '-R']:
             reinstall()
+            print('Reinstalled successfully')
         elif arg in ['-cps', '-c']:
-            if not os.path.exists(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf')):
-                with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                    f.write(str(default_cps))
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'r') as f:
-                print('current cps is', f.read())
-        elif arg in ['-cps', '-c']:
-            if not os.path.exists(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf')):
-                with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                    f.write(str(default_cps))
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'r') as f:
-                print('current cps is', f.read())
+            print('current cps is', get_cps())
         elif arg in ['-resetcps', '-C']:
-            if not os.path.exists(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf')):
-                with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                    f.write(str(default_cps))
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'r') as f:
-                fr = f.read()
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                f.write(str(default_cps))
+            fr = get_cps()
+            set_cps(default_cps)
             print(f'cps resetted from {fr} to {default_cps}')
         elif arg.startswith('--cps=') and (arg.removeprefix('--cps=').isnumeric() or arg.removeprefix('--cps=') == 'default'):
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                f.write(str(default_cps) if arg.removeprefix('--cps=') == 'default' else arg.removeprefix('--cps='))
-                print('cps set as', default_cps if arg.removeprefix('--cps=') == 'default' else arg.removeprefix('--cps='))
+            fr = get_cps()
+            set_cps(default_cps if arg.removeprefix('--cps=') == 'default' else arg.removeprefix('--cps='))
+            print(f'cps set from {fr} to', default_cps if arg.removeprefix('--cps=') == 'default' else arg.removeprefix('--cps='))
         elif arg.startswith('-c=') and (arg.removeprefix('-c=').isnumeric() or arg.removeprefix('-c=') == 'default'):
-            with open(os.path.join(os.path.abspath(os.path.dirname(__file__)), '.conf'), 'w') as f:
-                f.write(default_cps if arg.removeprefix('-c=') == 'default' else arg.removeprefix('-c='))
-                print('cps set as', default_cps if arg.removeprefix('-c=') == 'default' else arg.removeprefix('-c='))
+            fr = get_cps()
+            set_cps(default_cps if arg.removeprefix('-c=') == 'default' else arg.removeprefix('-c='))
+            print(f'cps set from {fr} to', default_cps if arg.removeprefix('-c=') == 'default' else arg.removeprefix('-c='))
         elif arg in ['--run', '-r']:
             pass
         else:
@@ -269,3 +305,7 @@ try:
 except KeyboardInterrupt:
     print('\nUser Quit')
     quit()
+except Exception as e:
+    quit(False)
+    raise e
+quit()
