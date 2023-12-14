@@ -1,9 +1,9 @@
 # AutoClicker
 A program to click faster in games.
-Currently only supports Windows.
+Currently only supports Windows. (But I will add Linux support soon)
 
 ## Installation
-To install requirements:
+To install requirements (For Windows):
 ```bash
 python -m pip install pyWinHook
 ```
@@ -26,4 +26,4 @@ python app.py -h
 ```
 
 ## Known Issues
-- While program running, alt-gr combinations doesn't work properly.
+- While program running (not only started, if exe or py file running), alt-gr combinations doesn't work properly on Windows.
