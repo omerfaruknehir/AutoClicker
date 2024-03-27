@@ -1,6 +1,7 @@
 # AutoClicker
 A program to click faster in games.
-Currently only supports Windows. (But I will add Linux support soon)
+Currently only supports Windows. (But I hope I will add Linux support at a convenient time (not soon))
+If you want to add linux support, you can add it by forking repo or committing your code it to this repository. (I will check and (I hope) accept commit)
 
 ## Installation
 To install requirements (For Windows):
