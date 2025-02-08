@@ -20,14 +20,13 @@ import subprocess
 from ctypes import windll
 
 if getattr(sys, 'frozen', True):
-    application_dir = os.path.dirname(sys.executable)
-elif __file__:
-    application_dir = os.path.dirname(__file__)
-
-if getattr(sys, 'frozen', True):
     application_path = sys.executable
 elif __file__:
     application_path = __file__
+else:
+    raise FileNotFoundException("Application not found")
+
+application_dir = os.path.dirname(application_path)
 
 hwnd = win32gui.GetForegroundWindow()
 USER_NAME = getpass.getuser()
